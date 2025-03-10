@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: StorPool <support@storpool.com>
+# SPDX-License-Identifier: BSD-2-Clause
+
+[build-system]
+requires = [
+  "hatchling >= 1.8, < 2",
+  "hatch-requirements-txt >= 0.3, < 0.5",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "sp-pve-utils"
+description = "Helper tools for the StorPool integration with Proxmox VE"
+readme = "README.md"
+license = {text = "BSD-2-Clause"}
+requires-python = ">= 3.8"
+dynamic = ["dependencies", "version"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: DFSG approved",
+  "License :: Freely Distributable",
+  "License :: OSI Approved :: BSD License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Software Development :: Testing",
+  "Topic :: Software Development :: Testing :: Unit",
+  "Typing :: Typed",
+]
+
+[[project.authors]]
+name = "StorPool"
+email = "support@storpool.com"
+
+[project.scripts]
+"sp-watchdog-mux" = "sp_pve_utils.watchdog_mux:main"
+
+[project.urls]
+Homepage = "https://storpool.com/"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sp_pve_utils"]
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements/install.txt"]
+
+[tool.hatch.version]
+path = "src/sp_pve_utils/defs.py"
+pattern = '(?x) ^ VERSION \s* (?: : \s* Final \s* )? = \s* " (?P<version> [^\s"]+ ) " \s* $'
+
+[tool.black]
+target-version = ["py38", "py39", "py310", "py311", "py312"]
+line-length = 100
+
+[tool.mypy]
+strict = true
+
+[tool.ruff]
+extend = "ruff-base.toml"
+output-format = "concise"
+preview = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+[tool.test-stages]
+stages = [
+  "@check and @quick and not @manual",
+  "@check and not @manual or @docs and not @manual",
+  "@tests and not @manual",
+]

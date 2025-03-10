@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: StorPool <support@storpool.com>
+# SPDX-License-Identifier: BSD-2-Clause
+
+target-version = "py38"
+line-length = 100
+
+[lint]
+select = []
+ignore = [
+  # No blank lines before the class docstring, TYVM
+  "D203",
+
+  # The multi-line docstring summary starts on the same line
+  "D213",
+
+  # The /x regex modifier is common enough in many languages
+  "FURB167",
+
+  # Too many false positives on multiline strings
+  "COM812"
+]
+
+[lint.flake8-copyright]
+notice-rgx = "(?x) SPDX-FileCopyrightText: \\s \\S"
+
+[lint.isort]
+force-single-line = true
+known-first-party = ["sp_pve_utils"]
+lines-after-imports = 2
+single-line-exclusions = ["collections.abc", "typing"]
+
+[lint.per-file-ignores]
+# This is a test suite
+"tests/unit/**.py" = ["S101", "T201"]

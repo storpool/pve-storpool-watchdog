@@ -1,0 +1,12 @@
+[Unit]
+Description=StorPool PVE HCI watchdog
+Documentation=https://repo.storpool.com/public/doc/pve/pve-storpool/
+
+[Service]
+Environment="PYTHONPATH=/opt/storpool/pve"
+ExecStart=sp-python3 -m sp_pve_utils.watchdog_mux run
+Restart=on-failure
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

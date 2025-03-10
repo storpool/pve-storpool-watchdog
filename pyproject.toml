@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: StorPool <support@storpool.com>
+# SPDX-License-Identifier: BSD-2-Clause
+
+[tool.publync.format.version]
+major = 0
+minor = 1
+
+[tool.publync.build.tox]
+
+[tool.publync.sync.rsync]
+remote = "root@https-sof.sof-vm.storpool.local:/var/www/repo/public/doc/pve/pve-storpool-watchdog"
+
+[tool.test-stages]
+stages = [
+  "@check and @quick and not @manual",
+  "@check and not @manual",
+]

@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: StorPool <support@storpool.com>
+# SPDX-License-Identifier: BSD-2-Clause
+
+feature-check >= 2, < 3
+packaging >= 21.3, < 24
+pytest >= 7, < 8

@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: StorPool <support@storpool.com>
+# SPDX-License-Identifier: BSD-2-Clause
+
+click >= 8, < 9
+storpool == 7.3.0
