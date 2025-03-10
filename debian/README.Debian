@@ -1,0 +1,3 @@
+The HTML documentation uses the "readthedocs" theme for mkdocs instead of
+the "material" one used by the upstream source because of some issues with
+the Debian package of mkdocs.

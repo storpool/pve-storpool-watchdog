@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+
+#DEBHELPER#
+
+case "$1" in
+	configure)
+
+		if ! deb-systemd-invoke is-enabled sp-watchdog-mux.service; then
+			systemctl mask sp-watchdog-mux.service
+		fi
+
+		;;
+
+	*)
+		;;
+esac
