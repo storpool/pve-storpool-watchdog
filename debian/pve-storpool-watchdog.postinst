@@ -10,6 +10,7 @@ case "$1" in
 		if ! deb-systemd-invoke is-enabled sp-watchdog-mux.service; then
 			systemctl mask sp-watchdog-mux.service
 		fi
+		systemctl daemon-reload
 
 		;;
 
