@@ -27,6 +27,7 @@ install: all
 			\
 			${MKDIR_P} -- "${DESTDIR}${OPT_SP_PVE}"; \
 			${INSTALL_PROGRAM} -- set-pve-watchdog "${DESTDIR}${OPT_SP_PVE}/set-pve-watchdog"; \
+			${INSTALL_PROGRAM} -- sp-watchdog-mux "${DESTDIR}${OPT_SP_PVE}/sp-watchdog-mux"; \
 			\
 			${MKDIR_P} -- "${DESTDIR}${SP_PVE_UTILS}"; \
 			${INSTALL_DATA}  -- watchdog/src/sp_pve_utils/*.py "${DESTDIR}${SP_PVE_UTILS}"; \

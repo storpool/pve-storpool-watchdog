@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sp-python3 -m sp_pve_utils.watchdog_mux run
