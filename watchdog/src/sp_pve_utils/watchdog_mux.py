@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 CLIENT_MSG_HEARTBEAT: Final = b"\x00"
 CLIENT_MSG_WARN: Final = b"V"
 
-CLIENT_TIMEOUT_HEARTBEAT: Final = 30  # in seconds
+CLIENT_TIMEOUT_HEARTBEAT: Final = 60  # in seconds
 
 WD_ACTIVE_MARKER: Final = pathlib.Path("/run/watchdog-mux.active")
 """The default active connections marker for the `sp-watchdog-mux` service."""
