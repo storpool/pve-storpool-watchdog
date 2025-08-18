@@ -16,6 +16,7 @@ import signal
 import socket
 import subprocess  # noqa: S404
 import sys
+import time
 from typing import TYPE_CHECKING
 
 import click
@@ -36,6 +37,7 @@ CLIENT_MSG_HEARTBEAT: Final = b"\x00"
 CLIENT_MSG_WARN: Final = b"V"
 
 CLIENT_TIMEOUT_HEARTBEAT: Final = 60  # in seconds
+CLIENT_HEARTBEAT_INTERVAL: Final = 10 # in secods
 
 WD_ACTIVE_MARKER: Final = pathlib.Path("/run/watchdog-mux.active")
 """The default active connections marker for the `sp-watchdog-mux` service."""
@@ -51,6 +53,7 @@ RE_PVE_SERVICE: Final = re.compile(
 
 SP_DETACH_SLEEP = 5
 
+INIT_TIME_DIFF = int( time.time() - time.monotonic() )
 
 @dataclasses.dataclass(frozen=True)
 class Config(defs.Config):
@@ -353,6 +356,14 @@ async def client_read(state: GlobalState, client_id: int, reader: asyncio.Stream
 
 async def trigger_panic_mode(state: GlobalState) -> None:
     """Trigger panic mode if not already triggered."""
+    global INIT_TIME_DIFF
+    now_time_diff = int( time.time() - time.monotonic() )
+    if INIT_TIME_DIFF > now_time_diff + CLIENT_TIMEOUT_HEARTBEAT - CLIENT_HEARTBEAT_INTERVAL:
+        state.cfg.log.warning("Time jumped back %(time)sec, wait till clock catches up", {"time": INIT_TIME_DIFF - now_time_diff})
+        time.sleep( INIT_TIME_DIFF - now_time_diff )
+        INIT_TIME_DIFF = int( time.time() - time.monotonic() )
+        await clear_timeout_all(state)
+        return
     if state.panic_mode.is_set():
         state.cfg.log.info("Already in panic mode")
         return
@@ -392,6 +403,20 @@ async def client_reset_timeout(state: GlobalState, client_id: int) -> None:
             WDClientTimeoutTask(f"client/{client_id} heartbeat check", timeout_task, client_id)
         )
 
+async def clear_timeout_all(state: GlobalState) -> None:
+    """Cancel any timeout check for all clients"""
+    async with state.tasks_lock:
+        to_remove: Final[list[int]] = []
+        state.cfg.log.warning("Cancelling all timeout tasks")
+        for index, task in (
+            (index, task)
+            for index, task in enumerate(state.tasks)
+            if isinstance(task, WDClientTimeoutTask)
+        ):
+            task.task.cancel()
+
+        for index in reversed(to_remove):
+            state.tasks.pop(index)
 
 @functools.singledispatch
 async def handle_msg(msg: MainMsg, _state: GlobalState) -> bool:
