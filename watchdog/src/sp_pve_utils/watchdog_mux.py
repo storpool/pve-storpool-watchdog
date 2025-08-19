@@ -156,8 +156,7 @@ class WDClientTask(WDTask):
 class WDClientTimeoutTask(WDClientTask):
     """A client heartbeat timeout task."""
 
-
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=False)
 class GlobalState:
     """The current state of the main loop: tasks, etc."""
 
@@ -358,11 +357,11 @@ async def trigger_panic_mode(state: GlobalState) -> None:
     """Trigger panic mode if not already triggered."""
     now_time_diff = int( time.time() - time.monotonic() )
     if state.time_diff > now_time_diff + CLIENT_TIMEOUT_HEARTBEAT - CLIENT_HEARTBEAT_INTERVAL:
-        """The clock jumped back, proxmox wont send any hearbeat till the clock catches up to the last record time"""
+        """The clock jumped back, proxmox won't send any hearbeat till the clock catches up to the last record time"""
         state.cfg.log.warning("Time jumped back %(time)sec, wait till clock catches up", {"time": state.time_diff - now_time_diff})
         time.sleep( state.time_diff - now_time_diff ) # Block all tasks till the clock catches up
+        await reset_timeout_all(state) # Restart timeout tasks
         state.time_diff = int( time.time() - time.monotonic() )
-        await clear_timeout_all(state)
         return
     if state.panic_mode.is_set():
         state.cfg.log.info("Already in panic mode")
@@ -403,20 +402,15 @@ async def client_reset_timeout(state: GlobalState, client_id: int) -> None:
             WDClientTimeoutTask(f"client/{client_id} heartbeat check", timeout_task, client_id)
         )
 
-async def clear_timeout_all(state: GlobalState) -> None:
-    """Cancel any timeout check for all clients"""
-    async with state.tasks_lock:
-        to_remove: Final[list[int]] = []
-        state.cfg.log.warning("Cancelling all timeout tasks")
-        for index, task in (
-            (index, task)
-            for index, task in enumerate(state.tasks)
-            if isinstance(task, WDClientTimeoutTask)
-        ):
-            task.task.cancel()
-
-        for index in reversed(to_remove):
-            state.tasks.pop(index)
+async def reset_timeout_all(state: GlobalState) -> None:
+    """Restart all timeout tasks for all clients"""
+    state.cfg.log.warning("Restarting all timeout tasks")
+    for index, task in (
+        (index, task)
+        for index, task in enumerate(state.tasks)
+        if isinstance(task, WDClientTimeoutTask)
+    ):
+        await client_reset_timeout(state, task.client_id)
 
 @functools.singledispatch
 async def handle_msg(msg: MainMsg, _state: GlobalState) -> bool:
