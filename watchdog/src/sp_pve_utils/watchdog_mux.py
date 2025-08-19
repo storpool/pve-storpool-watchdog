@@ -53,8 +53,6 @@ RE_PVE_SERVICE: Final = re.compile(
 
 SP_DETACH_SLEEP = 5
 
-INIT_TIME_DIFF = int( time.time() - time.monotonic() )
-
 @dataclasses.dataclass(frozen=True)
 class Config(defs.Config):
     """Runtime configuration for the `sp-watchdog-mux` service."""
@@ -181,6 +179,8 @@ class GlobalState:
     panic_mode: asyncio.Event
     """Whether we need to stop all VMs and PVE services."""
 
+    time_diff: int
+    """Holds the server start time. Used to check if the clock changed"""
 
 async def sp_force_detach(cfg: Config) -> None:
     """Force detach SP PVE volume and snapshot attachments on this node.
@@ -356,12 +356,12 @@ async def client_read(state: GlobalState, client_id: int, reader: asyncio.Stream
 
 async def trigger_panic_mode(state: GlobalState) -> None:
     """Trigger panic mode if not already triggered."""
-    global INIT_TIME_DIFF
     now_time_diff = int( time.time() - time.monotonic() )
-    if INIT_TIME_DIFF > now_time_diff + CLIENT_TIMEOUT_HEARTBEAT - CLIENT_HEARTBEAT_INTERVAL:
-        state.cfg.log.warning("Time jumped back %(time)sec, wait till clock catches up", {"time": INIT_TIME_DIFF - now_time_diff})
-        time.sleep( INIT_TIME_DIFF - now_time_diff )
-        INIT_TIME_DIFF = int( time.time() - time.monotonic() )
+    if state.time_diff > now_time_diff + CLIENT_TIMEOUT_HEARTBEAT - CLIENT_HEARTBEAT_INTERVAL:
+        """The clock jumped back, proxmox wont send any hearbeat till the clock catches up to the last record time"""
+        state.cfg.log.warning("Time jumped back %(time)sec, wait till clock catches up", {"time": state.time_diff - now_time_diff})
+        time.sleep( state.time_diff - now_time_diff ) # Block all tasks till the clock catches up
+        state.time_diff = int( time.time() - time.monotonic() )
         await clear_timeout_all(state)
         return
     if state.panic_mode.is_set():
@@ -600,6 +600,7 @@ async def do_run(cfg: Config) -> None:
         tasks_lock=asyncio.Lock(),
         client_id=itertools.count(),
         panic_mode=asyncio.Event(),
+        time_diff=int( time.time() - time.monotonic() )
     )
 
     async with state.tasks_lock:
