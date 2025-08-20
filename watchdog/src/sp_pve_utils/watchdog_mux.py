@@ -405,12 +405,16 @@ async def client_reset_timeout(state: GlobalState, client_id: int) -> None:
 async def reset_timeout_all(state: GlobalState) -> None:
     """Restart all timeout tasks for all clients"""
     state.cfg.log.warning("Restarting all timeout tasks")
+    to_reset: Final[list[int]] = []
     for index, task in (
         (index, task)
         for index, task in enumerate(state.tasks)
         if isinstance(task, WDClientTimeoutTask)
     ):
-        await client_reset_timeout(state, task.client_id)
+        to_reset.append(task.client_id)
+
+    for client_id in list(set(to_reset)):
+        await client_reset_timeout(state, client_id)
 
 @functools.singledispatch
 async def handle_msg(msg: MainMsg, _state: GlobalState) -> bool:
