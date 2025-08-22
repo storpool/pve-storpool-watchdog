@@ -1,0 +1,25 @@
+Source: pve-storpool-watchdog
+Section: utils
+Priority: optional
+Maintainer: StorPool <support@storpool.com>
+Uploaders: Denis Kanchev <denis.kanchev@storpool.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-sequence-single-binary,
+ systemd,
+Standards-Version: 4.6.2
+Homepage: https://repo.storpool.com/public/doc/pve/pve-storpool/
+Vcs-Git: https://github.com/storpool/pve-storpool-watchdog.git -b debian/unstable
+Vcs-Browser: https://github.com/storpool/pve-storpool-watchdog/tree/debian/unstable
+Rules-Requires-Root: no
+
+Package: pve-storpool-watchdog
+Architecture: all
+Depends:
+ systemd,
+ ${misc:Depends},
+Multi-Arch: foreign
+Description: StorPool HA watchdog replacement for Proxmox VE
+Replaces: pve-storpool
+#Breaks: pve-storpool (<< 0.5.1-1)
+Suggests: pve-storpool
