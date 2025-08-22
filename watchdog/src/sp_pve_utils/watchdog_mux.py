@@ -16,6 +16,7 @@ import signal
 import socket
 import subprocess  # noqa: S404
 import sys
+import time
 from typing import TYPE_CHECKING
 
 import click
@@ -35,7 +36,8 @@ if TYPE_CHECKING:
 CLIENT_MSG_HEARTBEAT: Final = b"\x00"
 CLIENT_MSG_WARN: Final = b"V"
 
-CLIENT_TIMEOUT_HEARTBEAT: Final = 30  # in seconds
+CLIENT_TIMEOUT_HEARTBEAT: Final = 60  # in seconds
+CLIENT_HEARTBEAT_INTERVAL: Final = 10 # in secods
 
 WD_ACTIVE_MARKER: Final = pathlib.Path("/run/watchdog-mux.active")
 """The default active connections marker for the `sp-watchdog-mux` service."""
@@ -50,7 +52,6 @@ RE_PVE_SERVICE: Final = re.compile(
 )
 
 SP_DETACH_SLEEP = 5
-
 
 @dataclasses.dataclass(frozen=True)
 class Config(defs.Config):
@@ -155,8 +156,7 @@ class WDClientTask(WDTask):
 class WDClientTimeoutTask(WDClientTask):
     """A client heartbeat timeout task."""
 
-
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=False)
 class GlobalState:
     """The current state of the main loop: tasks, etc."""
 
@@ -178,6 +178,8 @@ class GlobalState:
     panic_mode: asyncio.Event
     """Whether we need to stop all VMs and PVE services."""
 
+    time_diff: int
+    """Holds the server start time. Used to check if the clock changed"""
 
 async def sp_force_detach(cfg: Config) -> None:
     """Force detach SP PVE volume and snapshot attachments on this node.
@@ -353,6 +355,14 @@ async def client_read(state: GlobalState, client_id: int, reader: asyncio.Stream
 
 async def trigger_panic_mode(state: GlobalState) -> None:
     """Trigger panic mode if not already triggered."""
+    now_time_diff = int( time.time() - time.monotonic() )
+    if state.time_diff > now_time_diff + CLIENT_TIMEOUT_HEARTBEAT - CLIENT_HEARTBEAT_INTERVAL:
+        """The clock jumped back, proxmox won't send any hearbeat till the clock catches up to the last record time"""
+        state.cfg.log.warning("Time jumped back %(time)sec, wait till clock catches up", {"time": state.time_diff - now_time_diff})
+        time.sleep( state.time_diff - now_time_diff ) # Block all tasks till the clock catches up
+        await reset_timeout_all(state) # Restart timeout tasks
+        state.time_diff = int( time.time() - time.monotonic() )
+        return
     if state.panic_mode.is_set():
         state.cfg.log.info("Already in panic mode")
         return
@@ -392,6 +402,19 @@ async def client_reset_timeout(state: GlobalState, client_id: int) -> None:
             WDClientTimeoutTask(f"client/{client_id} heartbeat check", timeout_task, client_id)
         )
 
+async def reset_timeout_all(state: GlobalState) -> None:
+    """Restart all timeout tasks for all clients"""
+    state.cfg.log.warning("Restarting all timeout tasks")
+    to_reset: Final[list[int]] = []
+    for index, task in (
+        (index, task)
+        for index, task in enumerate(state.tasks)
+        if isinstance(task, WDClientTimeoutTask)
+    ):
+        to_reset.append(task.client_id)
+
+    for client_id in list(set(to_reset)):
+        await client_reset_timeout(state, client_id)
 
 @functools.singledispatch
 async def handle_msg(msg: MainMsg, _state: GlobalState) -> bool:
@@ -575,6 +598,7 @@ async def do_run(cfg: Config) -> None:
         tasks_lock=asyncio.Lock(),
         client_id=itertools.count(),
         panic_mode=asyncio.Event(),
+        time_diff=int( time.time() - time.monotonic() )
     )
 
     async with state.tasks_lock:
