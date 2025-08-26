@@ -1,3 +1,11 @@
+pve-storpool-watchdog (1.0.1-1) bookworm-backports; urgency=medium
+
+  * Fix clock jump back triggers the watchdog, now it will wait till the clock
+    catches up, like proxmox.
+  * Change the process name to be aligned with service - sp-watchdog-mux.
+
+ -- StorPool <support@storpool.com>  Tue, 26 Aug 2025 10:21:32 +0000
+
 pve-storpool-watchdog (1.0.0-1) UNRELEASED; urgency=medium
 
   * Initual upload. 
