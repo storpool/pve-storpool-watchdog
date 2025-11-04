@@ -8,6 +8,10 @@ case "$1" in
 	remove|abort-install|disappear)
 		systemctl unmask watchdog-mux.service || true
 		;;
+    purge)
+		systemctl unmask watchdog-mux.service || true
+		rm -rf /opt/storpool/pve/sp_pve_utils/ || true
+        ;;
 
 	*)
 		;;
