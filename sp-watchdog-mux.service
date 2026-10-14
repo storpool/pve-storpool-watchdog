@@ -1,6 +1,7 @@
 [Unit]
 Description=StorPool PVE HCI watchdog
 Documentation=https://repo.storpool.com/public/doc/pve/pve-storpool/
+Before=pve-ha-lrm
 
 [Service]
 Environment="PYTHONPATH=/opt/storpool/pve"
