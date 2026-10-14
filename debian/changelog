@@ -1,3 +1,23 @@
+pve-storpool-watchdog (1.0.2-1+trixie1) trixie-backports; urgency=medium
+
+  * Fix service sometimes starts before pve-ha-lrm
+  * Imp on purge cleanup cache
+
+ -- StorPool <support@storpool.com>  Fri, 14 Oct 2026 10:00:23 +0000
+
+pve-storpool-watchdog (1.0.2-1) bookworm-backports; urgency=medium
+
+  * Fix service sometimes starts before pve-ha-lrm
+  * Imp on purge cleanup cache
+
+ -- StorPool <support@storpool.com>  Fri, 14 Oct 2026 10:00:23 +0000
+
+pve-storpool-watchdog (1.0.1-1+trixie1) trixie-backports; urgency=medium
+
+  * Build for trixie
+
+ -- StorPool <support@storpool.com>  Fri, 15 May 2026 07:00:21 +0000
+
 pve-storpool-watchdog (1.0.1-1) bookworm-backports; urgency=medium
 
   * Fix clock jump back triggers the watchdog, now it will wait till the clock
